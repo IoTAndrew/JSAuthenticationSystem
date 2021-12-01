@@ -12,6 +12,7 @@ const methodOverride = require('method-override')
 const bodyParser = require('body-parser')
 const db = require('./db/users')
 
+
 const initializePassport = require('./passport-config')
 initializePassport(
     passport,
@@ -19,8 +20,7 @@ initializePassport(
     id => users.find(user => user.id === id)
 )
 
-const users = [] //data storage that should be replace with a database
-
+let users = []
 
 app.set('view-engine', 'ejs')
 app.use(bodyParser.urlencoded({extended: false}))
@@ -36,28 +36,12 @@ app.use(passport.initialize())
 app.use(passport.session())
 app.use(methodOverride('_method'))
 
-
-app.get('/users/:id', async (req, res) => {
-    const user = await db.getUser(req.params.id)
-    res.status(200).json({user})
-})
-
-app.patch('/users/:id', async (req, res) => {
-    const id = await db.updateUser(req.params.id, req.body)
-    res.status(200).json({id})
-})
-
-app.delete('/users/:id', async (req, res) => {
-    await db.deleteUser(req.params.id)
-    res.status(200).json({success: true})
-})
-
-
 app.get('/', checkAuthenticated, (req, res) =>{
     res.render('index.ejs', {name: req.user.name })
 })
 
-app.get('/login',checkNotAuthenticated ,(req,res) =>{
+app.get('/login',checkNotAuthenticated , async (req,res) =>{
+    users = await db.getAllUsers();
     res.render('login.ejs')
 })
 
@@ -84,7 +68,6 @@ app.post('/register', checkNotAuthenticated, async (req,res) => {
     } catch {
         res.redirect('/register')
     }
-    console.log(users)
 })
 
 app.delete('/logout', (req, res) => {
@@ -106,6 +89,5 @@ function checkNotAuthenticated(req, res, next) {
     }
     next()
 }
-
 
 app.listen(3000)
